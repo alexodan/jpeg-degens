@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import CounterContract from "../artifacts/contracts/Counter.sol/Counter.json";
 
 function getEth() {
   // @ts-ignore
@@ -30,11 +31,26 @@ async function run() {
   }
   const counter = new ethers.Contract(
     process.env.CONTRACT_ADDRESS, // where the contract is at
-    ["function getCount() public view returns (uint256)"], // the functions we want to call
-    new ethers.providers.Web3Provider(getEth()) // the provider we want to use
+    CounterContract.abi, // the functions we want to call
+    new ethers.providers.Web3Provider(getEth()).getSigner() // the provider we want to use
   );
-  console.log("COUNTER:", await counter.getCount());
-  console.log("Done...");
+
+  const countDOM = document.getElementById("count");
+  const button = document.createElement("button");
+  const body = document.querySelector("body");
+
+  countDOM.innerHTML = await counter.getCount();
+
+  button.textContent = "Increment";
+  button.addEventListener("click", async function () {
+    const tx = await counter.increment();
+  });
+  body.appendChild(button);
+
+  // @ts-ignore
+  counter.on(counter.filters.CounterIncreased(), function (count) {
+    countDOM.innerHTML = count;
+  });
 }
 
 run();
